@@ -89,25 +89,16 @@ export default function VolunteerPage() {
 
         if (uploadError) {
           console.error("Photo upload error:", uploadError);
-
-          setError(
-            t(
-              "फोटो अपलोड करने में समस्या हुई। कृपया पुनः प्रयास करें।",
-              "Unable to upload photo. Please try again."
-            )
-          );
-
           return;
         }
 
         photoPath = fileName;
       }
-
       // -----------------------------
       // INSERT VOLUNTEER
       // -----------------------------
 
-      const {data, error: insertError } = await supabase
+      const { data, error: insertError } = await supabase
         .from("volunteers")
         .insert({
           name,
@@ -117,7 +108,8 @@ export default function VolunteerPage() {
           interest,
           category,
           message,
-        });
+          photo_path: photoPath,
+        })
 
       // -----------------------------
       // DATABASE ERROR
