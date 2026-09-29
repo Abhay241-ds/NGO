@@ -2,11 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
+import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
+
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
 import { supabase } from "@/lib/supabase/client";
-import Link from "next/link";
 
 type Volunteer = {
   photo_path: string | null;
@@ -33,22 +34,21 @@ const interests = [
   "Other",
 ];
 
+const statusFilters = [
+  "All Status",
+  "Pending",
+  "Approved",
+  "Rejected",
+];
+
 export default function VolunteersPage() {
-  const getVolunteerPhotoUrl = (photoPath: string | null) => {
-    if (!photoPath) return null;
-
-    const { data } = supabase.storage
-      .from("volunteer-photos")
-      .getPublicUrl(photoPath);
-
-    return data.publicUrl;
-  };
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const [search, setSearch] = useState("");
   const [interest, setInterest] = useState("All Interests");
+  const [statusFilter, setStatusFilter] = useState("All Status");
 
   const [selectedVolunteer, setSelectedVolunteer] =
     useState<Volunteer | null>(null);
@@ -60,10 +60,21 @@ export default function VolunteersPage() {
     useState<Volunteer | null>(null);
 
   const [deleting, setDeleting] = useState(false);
+  const [updating, setUpdating] = useState<string | null>(null);
 
-  // ============================================================
-  // FETCH VOLUNTEERS
-  // ============================================================
+  const getVolunteerPhotoUrl = (photoPath: string | null) => {
+    if (!photoPath) return null;
+
+    const { data } = supabase.storage
+      .from("volunteer-photos")
+      .getPublicUrl(photoPath);
+
+    return data.publicUrl;
+  };
+
+  /* ============================================================
+     FETCH VOLUNTEERS
+  ============================================================ */
 
   const fetchVolunteers = async () => {
     setLoading(true);
@@ -72,7 +83,7 @@ export default function VolunteersPage() {
     const { data, error } = await supabase
       .from("volunteers")
       .select(
-        "id, volunteer_id,name, photo_path, email, phone, city, interest, category, message, status, created_at"
+        "id, volunteer_id, name, photo_path, email, phone, city, interest, category, message, status, created_at"
       )
       .order("created_at", { ascending: false });
 
@@ -83,7 +94,7 @@ export default function VolunteersPage() {
       return;
     }
 
-    setVolunteers(data || []);
+    setVolunteers((data || []) as Volunteer[]);
     setLoading(false);
   };
 
@@ -91,7 +102,9 @@ export default function VolunteersPage() {
     fetchVolunteers();
   }, []);
 
-  const [updating, setUpdating] = useState<string | null>(null);
+  /* ============================================================
+     APPROVE VOLUNTEER
+  ============================================================ */
 
   const handleApprove = async (volunteer: Volunteer) => {
     setUpdating(volunteer.id);
@@ -105,7 +118,7 @@ export default function VolunteersPage() {
     );
 
     if (approveError) {
-      console.error(approveError);
+      console.error("Approve error:", approveError);
       setError(approveError.message);
       setUpdating(null);
       return;
@@ -138,33 +151,39 @@ export default function VolunteersPage() {
     setUpdating(null);
   };
 
-
-  // ============================================================
-  // FILTER VOLUNTEERS
-  // ============================================================
+  /* ============================================================
+     FILTER VOLUNTEERS
+  ============================================================ */
 
   const filteredVolunteers = useMemo(() => {
-    return volunteers.filter((volunteer) => {
-      const searchText = search.toLowerCase().trim();
+    const searchText = search.toLowerCase().trim();
 
+    return volunteers.filter((volunteer) => {
       const matchesSearch =
+        !searchText ||
         volunteer.name.toLowerCase().includes(searchText) ||
         volunteer.email.toLowerCase().includes(searchText) ||
         volunteer.phone.toLowerCase().includes(searchText) ||
         volunteer.city.toLowerCase().includes(searchText) ||
-        volunteer.id.toLowerCase().includes(searchText);
+        (volunteer.volunteer_id || "")
+          .toLowerCase()
+          .includes(searchText);
 
       const matchesInterest =
         interest === "All Interests" ||
         volunteer.interest.toLowerCase() === interest.toLowerCase();
 
-      return matchesSearch && matchesInterest;
-    });
-  }, [volunteers, search, interest]);
+      const matchesStatus =
+        statusFilter === "All Status" ||
+        volunteer.status.toLowerCase() === statusFilter.toLowerCase();
 
-  // ============================================================
-  // STATISTICS
-  // ============================================================
+      return matchesSearch && matchesInterest && matchesStatus;
+    });
+  }, [volunteers, search, interest, statusFilter]);
+
+  /* ============================================================
+     STATISTICS
+  ============================================================ */
 
   const totalCount = volunteers.length;
 
@@ -180,74 +199,50 @@ export default function VolunteersPage() {
     (item) => item.status.toLowerCase() === "rejected"
   ).length;
 
-  // ============================================================
-  // DELETE VOLUNTEER
-  // ============================================================
+  /* ============================================================
+     DELETE VOLUNTEER
+  ============================================================ */
 
   const handleDelete = async () => {
-    if (!deleteVolunteer) {
-      console.log("No volunteer selected");
-      return;
-    }
-
-    console.log("DELETE STARTED");
-    console.log("Volunteer ID:", deleteVolunteer.id);
+    if (!deleteVolunteer) return;
 
     setDeleting(true);
     setError("");
 
     try {
-      // Get photo path
       const { data: volunteer, error: fetchError } = await supabase
         .from("volunteers")
         .select("photo_path")
         .eq("id", deleteVolunteer.id)
         .single();
 
-      console.log("Volunteer data:", volunteer);
-      console.log("Fetch error:", fetchError);
-
       if (fetchError) {
         setError("Unable to find this volunteer.");
         return;
       }
 
-      // Delete photo
+      /* Delete photo from storage */
       if (volunteer?.photo_path) {
-        console.log("PHOTO FOUND:", volunteer.photo_path);
-
-        const { data: files, error: listError } = await supabase.storage
+        const { error: photoError } = await supabase.storage
           .from("volunteer-photos")
-          .list("", {
-            search: volunteer.photo_path,
-          });
+          .remove([volunteer.photo_path]);
 
-        console.log("FILES FOUND:", files);
-        console.log("LIST ERROR:", listError);
-
-        const { data: storageData, error: photoError } =
-          await supabase.storage
-            .from("volunteer-photos")
-            .remove([volunteer.photo_path]);
-
-        console.log("STORAGE RESULT:", storageData);
-        console.log("STORAGE ERROR:", photoError);
+        if (photoError) {
+          console.error("Photo delete error:", photoError);
+        }
       }
 
-      // Delete volunteer
+      /* Delete volunteer */
       const { error: deleteError } = await supabase
         .from("volunteers")
         .delete()
         .eq("id", deleteVolunteer.id);
 
-      console.log("DATABASE DELETE ERROR:", deleteError);
-
       if (deleteError) {
+        console.error("Database delete error:", deleteError);
         setError("Unable to delete this volunteer.");
         return;
       }
-
-      console.log("DELETE SUCCESS");
 
       setVolunteers((prev) =>
         prev.filter((item) => item.id !== deleteVolunteer.id)
@@ -255,18 +250,17 @@ export default function VolunteersPage() {
 
       setDeleteVolunteer(null);
       setSelectedVolunteer(null);
-
-    } catch (error) {
-      console.error("DELETE EXCEPTION:", error);
+    } catch (err) {
+      console.error("Delete exception:", err);
       setError("Something went wrong while deleting this volunteer.");
     } finally {
       setDeleting(false);
     }
   };
 
-  // ============================================================
-  // FORMAT DATE
-  // ============================================================
+  /* ============================================================
+     FORMAT DATE
+  ============================================================ */
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString("en-IN", {
@@ -278,29 +272,18 @@ export default function VolunteersPage() {
 
   return (
     <div className="min-h-screen bg-[#f6f8f5]">
-
-      {/* =====================================================
-          ADMIN CONTENT
-      ====================================================== */}
-
       <div className="flex min-h-screen">
-
         {/* SIDEBAR */}
         <AdminSidebar />
 
         {/* RIGHT SIDE */}
         <div className="min-w-0 flex-1">
-
-          {/* ADMIN HEADER */}
+          {/* HEADER */}
           <AdminHeader />
 
-          {/* PAGE CONTENT */}
+          {/* CONTENT */}
           <main className="p-5 lg:p-8">
-
-            {/* =================================================
-                HEADING
-            ================================================= */}
-
+            {/* HEADING */}
             <div className="mb-7">
               <h1 className="text-2xl font-extrabold text-[#173b24]">
                 Volunteers
@@ -311,10 +294,7 @@ export default function VolunteersPage() {
               </p>
             </div>
 
-            {/* =================================================
-                ERROR
-            ================================================= */}
-
+            {/* ERROR */}
             {error && (
               <div className="mb-6 flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
                 <span>{error}</span>
@@ -329,12 +309,8 @@ export default function VolunteersPage() {
               </div>
             )}
 
-            {/* =================================================
-                STATISTICS
-            ================================================= */}
-
+            {/* STATISTICS */}
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-
               <VolunteerStat
                 title="Total Volunteers"
                 value={totalCount.toString()}
@@ -366,20 +342,13 @@ export default function VolunteersPage() {
                 iconBg="bg-red-50"
                 iconColor="text-red-600"
               />
-
             </div>
 
-            {/* =================================================
-                FILTERS
-            ================================================= */}
-
+            {/* FILTERS */}
             <div className="mt-7 rounded-xl border border-gray-200 bg-white p-4">
-
               <div className="flex flex-col gap-3 lg:flex-row">
-
-                {/* Search */}
+                {/* SEARCH */}
                 <div className="relative flex-1">
-
                   <i className="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
 
                   <input
@@ -389,12 +358,10 @@ export default function VolunteersPage() {
                     placeholder="Search by name, phone, email, city or volunteer ID..."
                     className="h-11 w-full rounded-lg border border-gray-200 bg-gray-50 pl-11 pr-4 text-sm outline-none transition focus:border-[#17653a] focus:bg-white focus:ring-2 focus:ring-[#17653a]/10"
                   />
-
                 </div>
 
-                {/* Interest */}
+                {/* INTEREST */}
                 <div className="relative lg:w-52">
-
                   <select
                     value={interest}
                     onChange={(e) => setInterest(e.target.value)}
@@ -408,12 +375,27 @@ export default function VolunteersPage() {
                   </select>
 
                   <i className="fa-solid fa-chevron-down pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-400" />
-
                 </div>
 
+                {/* STATUS */}
+                <div className="relative lg:w-44">
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="h-11 w-full appearance-none rounded-lg border border-gray-200 bg-gray-50 px-4 pr-10 text-sm outline-none focus:border-[#17653a] focus:bg-white"
+                  >
+                    {statusFilters.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+
+                  <i className="fa-solid fa-chevron-down pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-400" />
+                </div>
               </div>
 
-              {/* Results */}
+              {/* RESULTS */}
               <div className="mt-3 text-xs text-gray-500">
                 Showing{" "}
                 <span className="font-bold text-gray-700">
@@ -425,259 +407,20 @@ export default function VolunteersPage() {
                 </span>{" "}
                 volunteers
               </div>
-
             </div>
 
-            {/* =================================================
-                VOLUNTEERS TABLE
-            ================================================= */}
-
+            {/* TABLE */}
             <div className="mt-6 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-
               {loading ? (
-                /* Loading */
                 <div className="flex min-h-60 flex-col items-center justify-center">
-
                   <div className="h-9 w-9 animate-spin rounded-full border-4 border-gray-200 border-t-[#17653a]" />
 
                   <p className="mt-4 text-sm font-semibold text-gray-500">
                     Loading volunteers...
                   </p>
-
                 </div>
-              ) : (
-                <div className="overflow-x-auto">
-
-                  <table className="w-full min-w-400 text-center">
-
-                    <thead className="border-b border-gray-200 bg-gray-50">
-
-                      <tr>
-
-                        <th className="px-5 py-4 text-xs font-bold uppercase tracking-wide  text-gray-500">
-                          Volunteer
-                        </th>
-                        <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">
-                          Volunteer ID
-                        </th>
-
-                        <th className="px-5 py-4 text-xs font-bold uppercase tracking-wide text-gray-500">
-                          Phone
-                        </th>
-
-                        <th className="px-5 py-4 text-xs font-bold uppercase tracking-wide text-gray-500">
-                          City
-                        </th>
-
-                        <th className="px-5 py-4 text-xs font-bold uppercase tracking-wide text-gray-500">
-                          Interest
-                        </th>
-                        <th className="px-5 py-4 text-xs font-bold uppercase tracking-wide text-gray-500">
-                          Category
-                        </th>
-
-                        <th className="px-5 py-4 text-xs font-bold uppercase tracking-wide text-gray-500">
-                          Status
-                        </th>
-
-                        <th className="px-5 py-4 text-xs font-bold uppercase tracking-wide text-gray-500">
-                          Registered
-                        </th>
-
-                        <th className="px-5 py-4 text-right text-xs font-bold uppercase tracking-wide text-gray-500">
-                          Actions
-                        </th>
-
-                      </tr>
-
-                    </thead>
-
-                    <tbody className="divide-y divide-gray-100">
-
-                      {filteredVolunteers.map((volunteer) => (
-
-                        <tr
-                          key={volunteer.id}
-                          className="transition hover:bg-gray-50"
-                        >
-
-                          {/* Volunteer */}
-                          <td className="px-5 py-4">
-
-                            <div className="flex items-center gap-3">
-
-                              <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-[#eaf4ed]">
-                                {volunteer.photo_path ? (
-                                  <img
-                                    src={getVolunteerPhotoUrl(volunteer.photo_path) || ""}
-                                    alt={volunteer.name}
-                                    className="h-full w-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="flex h-full w-full items-center justify-center bg-[#eaf4ed] font-bold uppercase text-[#17653a]">
-                                    {volunteer.name.charAt(0)}
-                                  </div>
-                                )}
-                              </div>
-
-                              <div className="min-w-0">
-
-                                <p className="truncate text-sm font-bold text-gray-800">
-                                  {volunteer.name}
-                                </p>
-
-                                <p className="mt-0.5 truncate text-xs text-gray-500">
-                                  {volunteer.email}
-                                </p>
-
-                              </div>
-
-                            </div>
-
-                          </td>
-
-
-                          <td className="px-5 py-4">
-                            {volunteer.volunteer_id ? (
-                              <span className="inline-flex rounded-lg  px-3 py-1.5 text-xs font-bold text-gray-700 bg-[#eaf4ed]">
-                                {volunteer.volunteer_id}
-                              </span>
-                            ) : (
-                              <span className="text-sm text-gray-400">
-                                —
-                              </span>
-                            )}
-                          </td>
-                          {/* Phone */}
-                          <td className="px-5 py-4">
-
-                            <span className="text-sm text-gray-600">
-                              {volunteer.phone}
-                            </span>
-
-                          </td>
-
-                          {/* City */}
-                          <td className="px-5 py-4">
-
-                            <span className="text-sm text-gray-600">
-                              {volunteer.city}
-                            </span>
-
-                          </td>
-
-                          {/* Interest */}
-                          <td className="px-5 py-4">
-
-                            <span className="text-sm text-gray-600">
-                              {formatInterest(volunteer.interest)}
-                            </span>
-
-                          </td>
-                          <td className="px-5 py-4">
-                            <span className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">
-                              {volunteer.category}
-                            </span>
-                          </td>
-
-                          {/* Status */}
-                          <td className="px-5 py-4">
-
-                            <StatusBadge
-                              status={volunteer.status}
-                            />
-
-                          </td>
-
-                          {/* Date */}
-                          <td className="px-5 py-4">
-
-                            <span className="text-sm text-gray-500">
-                              {formatDate(volunteer.created_at)}
-                            </span>
-
-                          </td>
-
-                          {/* Actions */}
-                          <td className="px-5 py-4 text-center">
-
-                            <div className="flex justify-end gap-2">
-
-                              {volunteer.status.toLowerCase() === "pending" && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleApprove(volunteer)}
-                                  disabled={updating === volunteer.id}
-                                  title="Approve Volunteer"
-                                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-green-600 transition hover:border-green-500 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                  {updating === volunteer.id ? (
-                                    <i className="fa-solid fa-spinner fa-spin text-sm" />
-                                  ) : (
-                                    <i className="fa-solid fa-check text-sm" />
-                                  )}
-                                </button>
-                              )}
-
-                              {/* ID Card */}
-                              {volunteer.status.toLowerCase() === "approved" &&
-                                volunteer.volunteer_id && (
-                                  <button
-                                    type="button"
-                                    onClick={() => setIdCardVolunteer(volunteer)}
-                                    title="Generate ID Card"
-                                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-[#17653a] transition hover:border-[#17653a] hover:bg-[#eaf4ed]"
-                                  >
-                                    <i className="fa-solid fa-id-card text-sm" />
-                                  </button>
-                                )}
-
-                              {/* View */}
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setSelectedVolunteer(volunteer)
-                                }
-                                title="View Details"
-                                className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-600 transition hover:border-[#17653a] hover:text-[#17653a]"
-                              >
-                                <i className="fa-solid fa-eye text-sm" />
-                              </button>
-
-                              {/* Delete */}
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setDeleteVolunteer(volunteer)
-                                }
-                                title="Delete"
-                                className="flex h-9 w-9 items-center justify-center rounded-lg border transition border-red-200 text-red-500 hover:border-red-900 hover:text-red-900"
-                              >
-                                <i className="fa-solid fa-trash text-sm" />
-                              </button>
-
-
-
-                            </div>
-
-                          </td>
-
-                        </tr>
-
-                      ))}
-
-                    </tbody>
-
-                  </table>
-
-                </div>
-              )}
-
-              {/* Empty State */}
-              {!loading && filteredVolunteers.length === 0 && (
-
+              ) : filteredVolunteers.length === 0 ? (
                 <div className="py-16 text-center">
-
                   <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#eaf4ed] text-xl text-[#17653a]">
                     <i className="fa-solid fa-users-slash" />
                   </div>
@@ -691,74 +434,224 @@ export default function VolunteersPage() {
                       ? "No volunteer applications have been submitted yet."
                       : "Try changing your search or filter."}
                   </p>
-
                 </div>
+              ) : (
+                /*
+                  Only the table body area scrolls vertically.
+                  This keeps approximately 10 volunteer rows visible.
+                */
+                <div className="overflow-x-auto">
+                  <div className="max-h-[650px] overflow-y-auto">
+                    <table className="w-full min-w-[1400px] text-center">
+                      <thead className="sticky top-0 z-10 border-b border-gray-200 bg-gray-50">
+                        <tr>
+                          <th className="px-5 py-4 text-xs font-bold uppercase tracking-wide text-gray-500">
+                            Volunteer
+                          </th>
 
+                          <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-gray-500">
+                            Volunteer ID
+                          </th>
+
+                          <th className="px-5 py-4 text-xs font-bold uppercase tracking-wide text-gray-500">
+                            Phone
+                          </th>
+
+                          <th className="px-5 py-4 text-xs font-bold uppercase tracking-wide text-gray-500">
+                            City
+                          </th>
+
+                          <th className="px-5 py-4 text-xs font-bold uppercase tracking-wide text-gray-500">
+                            Interest
+                          </th>
+
+                          <th className="px-5 py-4 text-xs font-bold uppercase tracking-wide text-gray-500">
+                            Category
+                          </th>
+
+                          <th className="px-5 py-4 text-xs font-bold uppercase tracking-wide text-gray-500">
+                            Status
+                          </th>
+
+                          <th className="px-5 py-4 text-xs font-bold uppercase tracking-wide text-gray-500">
+                            Registered
+                          </th>
+
+                          <th className="px-5 py-4 text-right text-xs font-bold uppercase tracking-wide text-gray-500">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+
+                      <tbody className="divide-y divide-gray-100">
+                        {filteredVolunteers.map((volunteer) => (
+                          <tr
+                            key={volunteer.id}
+                            className="transition hover:bg-gray-50"
+                          >
+                            {/* VOLUNTEER */}
+                            <td className="px-5 py-4">
+                              <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-[#eaf4ed]">
+                                  {volunteer.photo_path ? (
+                                    <img
+                                      src={
+                                        getVolunteerPhotoUrl(
+                                          volunteer.photo_path
+                                        ) || ""
+                                      }
+                                      alt={volunteer.name}
+                                      className="h-full w-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="flex h-full w-full items-center justify-center bg-[#eaf4ed] font-bold uppercase text-[#17653a]">
+                                      {volunteer.name.charAt(0)}
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="min-w-0">
+                                  <p className="truncate text-sm font-bold text-gray-800">
+                                    {volunteer.name}
+                                  </p>
+
+                                  <p className="mt-0.5 truncate text-xs text-gray-500">
+                                    {volunteer.email}
+                                  </p>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* VOLUNTEER ID */}
+                            <td className="px-5 py-4">
+                              {volunteer.volunteer_id ? (
+                                <span className="inline-flex rounded-lg bg-[#eaf4ed] px-3 py-1.5 text-xs font-bold text-gray-700">
+                                  {volunteer.volunteer_id}
+                                </span>
+                              ) : (
+                                <span className="text-sm text-gray-400">
+                                  —
+                                </span>
+                              )}
+                            </td>
+
+                            {/* PHONE */}
+                            <td className="px-5 py-4">
+                              <span className="text-sm text-gray-600">
+                                {volunteer.phone}
+                              </span>
+                            </td>
+
+                            {/* CITY */}
+                            <td className="px-5 py-4">
+                              <span className="text-sm text-gray-600">
+                                {volunteer.city}
+                              </span>
+                            </td>
+
+                            {/* INTEREST */}
+                            <td className="px-5 py-4">
+                              <span className="text-sm text-gray-600">
+                                {formatInterest(volunteer.interest)}
+                              </span>
+                            </td>
+
+                            {/* CATEGORY */}
+                            <td className="px-5 py-4">
+                              <span className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">
+                                {volunteer.category}
+                              </span>
+                            </td>
+
+                            {/* STATUS */}
+                            <td className="px-5 py-4">
+                              <StatusBadge status={volunteer.status} />
+                            </td>
+
+                            {/* DATE */}
+                            <td className="px-5 py-4">
+                              <span className="text-sm text-gray-500">
+                                {formatDate(volunteer.created_at)}
+                              </span>
+                            </td>
+
+                            {/* ACTIONS */}
+                            <td className="px-5 py-4 text-center">
+                              <div className="flex justify-end gap-2">
+                                {/* APPROVE */}
+                                {volunteer.status.toLowerCase() ===
+                                  "pending" && (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleApprove(volunteer)
+                                      }
+                                      disabled={updating === volunteer.id}
+                                      title="Approve Volunteer"
+                                      className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-green-600 transition hover:border-green-500 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                      {updating === volunteer.id ? (
+                                        <i className="fa-solid fa-spinner fa-spin text-sm" />
+                                      ) : (
+                                        <i className="fa-solid fa-check text-sm" />
+                                      )}
+                                    </button>
+                                  )}
+
+                                {/* ID CARD */}
+                                {volunteer.status.toLowerCase() ===
+                                  "approved" &&
+                                  volunteer.volunteer_id && (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setIdCardVolunteer(volunteer)
+                                      }
+                                      title="Generate ID Card"
+                                      className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-[#17653a] transition hover:border-[#17653a] hover:bg-[#eaf4ed]"
+                                    >
+                                      <i className="fa-solid fa-id-card text-sm" />
+                                    </button>
+                                  )}
+
+                                {/* VIEW */}
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setSelectedVolunteer(volunteer)
+                                  }
+                                  title="View Details"
+                                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-600 transition hover:border-[#17653a] hover:text-[#17653a]"
+                                >
+                                  <i className="fa-solid fa-eye text-sm" />
+                                </button>
+
+                                {/* DELETE */}
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setDeleteVolunteer(volunteer)
+                                  }
+                                  title="Delete"
+                                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-red-200 text-red-500 transition hover:border-red-900 hover:text-red-900"
+                                >
+                                  <i className="fa-solid fa-trash text-sm" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               )}
-
             </div>
-
-            <div className="mt-7">
-
-              <h2 className="mb-4 text-lg font-bold text-[#173b24]">
-                Quick Actions
-              </h2>
-
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <Link
-                  href="/admin/"
-                  className="rounded-xl border text-center border-gray-200 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-                >
-                  <i className="fa-solid fa-chart-line text-xl text-[#17653a]" />
-
-                  <h3 className=" font-bold text-gray-800">
-                    Dashboard
-                  </h3>
-
-                </Link>
-
-
-
-                <Link
-                  href="/admin/activities"
-                  className="rounded-xl border text-center border-gray-200 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-                >
-                  <i className="fa-solid fa-hand-holding-heart text-xl text-[#17653a]" />
-
-                  <h3 className=" font-bold text-gray-800">
-                    Activities
-                  </h3>
-
-
-                </Link>
-
-                <Link
-                  href="/admin/donations"
-                  className="rounded-xl border text-center border-gray-200 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-                >
-                  <i className="fa-solid fa-indian-rupee-sign text-xl text-[#17653a]" />
-
-                  <h3 className="font-bold text-gray-800 ">
-                    Donations
-                  </h3>
-
-
-                </Link>
-
-              </div>
-
-            </div>
-
           </main>
-
         </div>
-
       </div>
 
-      {/* =====================================================
-    ID CARD MODAL
-====================================================== */}
-
+      {/* ID CARD */}
       {idCardVolunteer && (
         <VolunteerIdCardModal
           volunteer={idCardVolunteer}
@@ -766,10 +659,7 @@ export default function VolunteersPage() {
         />
       )}
 
-      {/* =====================================================
-          DETAILS MODAL
-      ====================================================== */}
-
+      {/* DETAILS */}
       {selectedVolunteer && (
         <VolunteerDetailsModal
           volunteer={selectedVolunteer}
@@ -778,10 +668,7 @@ export default function VolunteersPage() {
         />
       )}
 
-      {/* =====================================================
-          DELETE MODAL
-      ====================================================== */}
-
+      {/* DELETE */}
       {deleteVolunteer && (
         <DeleteVolunteerModal
           volunteer={deleteVolunteer}
@@ -790,7 +677,6 @@ export default function VolunteersPage() {
           onConfirm={handleDelete}
         />
       )}
-
     </div>
   );
 }
@@ -831,19 +717,13 @@ function VolunteerStat({
 }) {
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-
       <div className="flex items-center justify-between">
-
         <div>
-
-          <p className="text-xs font-semibold text-gray-500">
-            {title}
-          </p>
+          <p className="text-xs font-semibold text-gray-500">{title}</p>
 
           <p className="mt-2 text-2xl font-extrabold text-[#173b24]">
             {value}
           </p>
-
         </div>
 
         <div
@@ -851,9 +731,7 @@ function VolunteerStat({
         >
           <i className={icon} />
         </div>
-
       </div>
-
     </div>
   );
 }
@@ -862,11 +740,7 @@ function VolunteerStat({
    STATUS BADGE
 ============================================================ */
 
-function StatusBadge({
-  status,
-}: {
-  status: string;
-}) {
+function StatusBadge({ status }: { status: string }) {
   const normalizedStatus = status.toLowerCase();
 
   const styles: Record<string, string> = {
@@ -898,9 +772,6 @@ function StatusBadge({
   );
 }
 
-
-
-
 /* ============================================================
    DETAILS MODAL
 ============================================================ */
@@ -914,23 +785,18 @@ function VolunteerDetailsModal({
   onClose: () => void;
   formatDate: (date: string) => string;
 }) {
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       onClick={onClose}
     >
-
       <div
         className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-
-        {/* Header */}
+        {/* HEADER */}
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-5">
-
           <div>
-
             <h2 className="font-extrabold text-[#173b24]">
               Volunteer Details
             </h2>
@@ -938,7 +804,6 @@ function VolunteerDetailsModal({
             <p className="mt-1 text-xs text-gray-500">
               ID: {volunteer.volunteer_id || "N/A"}
             </p>
-
           </div>
 
           <button
@@ -948,20 +813,20 @@ function VolunteerDetailsModal({
           >
             <i className="fa-solid fa-xmark" />
           </button>
-
         </div>
 
         <div className="p-6">
-
-          {/* Profile */}
+          {/* PROFILE */}
           <div className="flex items-center gap-4 rounded-xl bg-[#f6f8f5] p-5">
-
             <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full bg-[#eaf4ed]">
               {volunteer.photo_path ? (
                 <img
-                  src={supabase.storage
-                    .from("volunteer-photos")
-                    .getPublicUrl(volunteer.photo_path).data.publicUrl}
+                  src={
+                    supabase.storage
+                      .from("volunteer-photos")
+                      .getPublicUrl(volunteer.photo_path).data
+                      .publicUrl
+                  }
                   alt={volunteer.name}
                   className="h-full w-full object-cover"
                 />
@@ -973,7 +838,6 @@ function VolunteerDetailsModal({
             </div>
 
             <div className="min-w-0">
-
               <h3 className="truncate text-lg font-extrabold text-[#173b24]">
                 {volunteer.name}
               </h3>
@@ -985,14 +849,11 @@ function VolunteerDetailsModal({
               <div className="mt-2">
                 <StatusBadge status={volunteer.status} />
               </div>
-
             </div>
-
           </div>
 
-          {/* Information */}
+          {/* INFORMATION */}
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
-
             <DetailItem
               label="Email Address"
               value={volunteer.email}
@@ -1032,30 +893,36 @@ function VolunteerDetailsModal({
               icon="fa-solid fa-circle-info"
             />
 
+            <DetailItem
+              label="Category"
+              value={volunteer.category || "General"}
+              icon="fa-solid fa-layer-group"
+            />
+
+            <DetailItem
+              label="Volunteer ID"
+              value={volunteer.volunteer_id || "Not assigned"}
+              icon="fa-solid fa-id-card"
+            />
           </div>
 
-          {/* Message */}
+          {/* MESSAGE */}
           <div className="mt-6 rounded-xl border border-gray-200 p-5">
-
             <div className="flex items-center gap-2">
-
               <i className="fa-solid fa-message text-[#17653a]" />
 
               <h3 className="font-bold text-[#173b24]">
                 Why They Want to Volunteer
               </h3>
-
             </div>
 
             <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-gray-600">
               {volunteer.message || "No message provided."}
             </p>
-
           </div>
 
-          {/* Actions */}
+          {/* ACTION */}
           <div className="mt-6 flex justify-end">
-
             <button
               type="button"
               onClick={onClose}
@@ -1063,24 +930,15 @@ function VolunteerDetailsModal({
             >
               Close
             </button>
-
           </div>
-
         </div>
-
       </div>
-
     </div>
   );
 }
 
-
 /* ============================================================
-   VOLUNTEER ID CARD MODAL
-============================================================ */
-
-/* ============================================================
-   VOLUNTEER ID CARD MODAL
+   ID CARD MODAL
 ============================================================ */
 
 function VolunteerIdCardModal({
@@ -1976,6 +1834,17 @@ function VolunteerIdCardModal({
       1
     );
 
+    drawInfoRow(
+      ctx,
+      "Phone",
+      volunteer.phone ||
+      "N/A",
+      infoX,
+      firstRowY +
+      rowGap * 4,
+      1
+    );
+
     /* ==========================================================
        QR CODE
     ========================================================== */
@@ -2233,7 +2102,7 @@ function VolunteerIdCardModal({
   };
 
   /* ============================================================
-     PRINT CARD
+     PRINT
   ============================================================ */
 
   const printCard = async () => {
@@ -2629,9 +2498,6 @@ function VolunteerIdCardModal({
     </div>
   );
 }
-/* ============================================================
-   ID CARD ROW
-============================================================ */
 
 /* ============================================================
    ID CARD ROW
@@ -2646,7 +2512,7 @@ function IdCardRow({
 }) {
   return (
     <div className="flex items-start">
-      <div className="w-31.25 shrink-0 text-[12px] font-semibold text-gray-500">
+      <div className="w-[125px] shrink-0 text-[12px] font-semibold text-gray-500">
         {label}
       </div>
 
@@ -2676,19 +2542,15 @@ function DetailItem({
 }) {
   return (
     <div className="rounded-lg border border-gray-200 p-4">
-
       <div className="flex items-center gap-2 text-xs font-semibold text-gray-500">
-
         <i className={icon} />
 
         {label}
-
       </div>
 
       <p className="mt-2 wrap-break-word text-sm font-bold text-gray-800">
         {value}
       </p>
-
     </div>
   );
 }
@@ -2713,12 +2575,10 @@ function DeleteVolunteerModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       onClick={onCancel}
     >
-
       <div
         className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600">
           <i className="fa-solid fa-trash" />
         </div>
@@ -2736,7 +2596,6 @@ function DeleteVolunteerModal({
         </p>
 
         <div className="mt-6 flex justify-end gap-3">
-
           <button
             type="button"
             onClick={onCancel}
@@ -2754,11 +2613,8 @@ function DeleteVolunteerModal({
           >
             {deleting ? "Deleting..." : "Delete"}
           </button>
-
         </div>
-
       </div>
-
     </div>
   );
 }
