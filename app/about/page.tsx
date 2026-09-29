@@ -245,7 +245,7 @@ export default function AboutPage() {
               ["2025", "स्थापना वर्ष", "Year Founded"],
               ["500+", "लाभान्वित लोग", "People Benefited"],
               ["10+", "सेवा प्रकल्प", "Service Projects"],
-              ["विदिशा", "सेवा क्षेत्र", "Service Area"],
+              ["संपूर्ण भारत", "सेवा क्षेत्र", "Service Area"],
             ].map(([value, hi, en], index) => (
               <div
                 key={en}

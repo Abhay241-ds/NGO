@@ -107,7 +107,7 @@ export default function VolunteerPage() {
       // INSERT VOLUNTEER
       // -----------------------------
 
-      const { data, error: insertError } = await supabase
+      const {data, error: insertError } = await supabase
         .from("volunteers")
         .insert({
           name,
@@ -116,12 +116,8 @@ export default function VolunteerPage() {
           city,
           interest,
           category,
-          message: message || null,
-          photo_path: photoPath,
-          volunteer_id: null,
-        })
-        .select()
-        .single();
+          message,
+        });
 
       // -----------------------------
       // DATABASE ERROR

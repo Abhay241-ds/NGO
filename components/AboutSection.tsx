@@ -91,7 +91,7 @@ export default function AboutSection() {
 
           {[
             ["स्थापना वर्ष", "Year Founded", "2025"],
-            ["सेवा क्षेत्र", "Service Area", "भारत"],
+            ["सेवा क्षेत्र", "Service Area", "संपूर्ण भारत"],
             ["लाभान्वित लोग", "People Benefited", "500+"],
             ["सेवा प्रकल्प", "Service Projects", "10+"],
           ].map(([hi, en, value], index) => (
