@@ -17,11 +17,11 @@ export default async function VerifyVolunteer({ params }: Props) {
         .eq("volunteer_id", volunteerId)
         .maybeSingle();
 
-    console.log("PRODUCTION VERIFY:", {
-        volunteerId,
-        volunteer,
-        error,
-    });
+    console.log("VERIFY ID:", volunteerId);
+    console.log("VERIFY FOUND:", volunteer !== null);
+    console.log("VERIFY NAME:", volunteer?.name);
+    console.log("VERIFY STATUS:", volunteer?.status);
+    console.log("VERIFY ERROR:", error?.message);
 
     // Volunteer not found
     if (!volunteer) {
