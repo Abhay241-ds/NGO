@@ -47,6 +47,8 @@ const categories = [
   "Food Distribution",
   "Women Empowerment",
   "Animal Welfare",
+  "Bird Welfare",
+  "Child Protection",
   "Other",
 ];
 
@@ -162,7 +164,7 @@ export default function ActivitiesAdminPage() {
       title_hi: "",
       description_en: "",
       description_hi: "",
-      category: "Social Service",
+      category: "Other",
       activity_date: "",
     });
 

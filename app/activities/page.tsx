@@ -27,7 +27,7 @@ type Activity = {
 };
 
 export default function ActivitiesPage() {
-  
+
   const { t } = useLanguage();
 
   const [activeCategory, setActiveCategory] = useState("all");
@@ -81,6 +81,16 @@ export default function ActivitiesPage() {
       id: "animal-welfare",
       hi: "पशु कल्याण",
       en: "Animal Welfare",
+    },
+    {
+      id: "bird-welfare",
+      hi: "पक्षी कल्याण",
+      en: "Bird Welfare",
+    },
+    {
+      id: "child-protection",
+      hi: "बाल संरक्षण",
+      en: "Child Protection",
     },
     {
       id: "other",

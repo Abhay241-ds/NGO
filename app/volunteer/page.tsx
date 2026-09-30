@@ -10,6 +10,7 @@ export default function VolunteerPage() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -294,24 +295,40 @@ export default function VolunteerPage() {
                       {t("क्षेत्र चुनें", "Select an area")}
                     </option>
 
-                    <option value="social">
-                      {t("समाज सेवा", "Social Service")}
-                    </option>
-
                     <option value="education">
                       {t("शिक्षा", "Education")}
-                    </option>
-
-                    <option value="environment">
-                      {t("पर्यावरण", "Environment")}
                     </option>
 
                     <option value="health">
                       {t("स्वास्थ्य", "Health")}
                     </option>
 
+                    <option value="tree-plantation">
+                      {t("वृक्षारोपण", "Tree Plantation")}
+                    </option>
+
                     <option value="sports">
                       {t("खेलकूद", "Sports")}
+                    </option>
+
+                    <option value="food-distribution">
+                      {t("भोजन वितरण", "Food Distribution")}
+                    </option>
+
+                    <option value="women-empowerment">
+                      {t("महिला सशक्तिकरण", "Women Empowerment")}
+                    </option>
+
+                    <option value="child-protection">
+                      {t("बाल संरक्षण", "Child Protection")}
+                    </option>
+
+                    <option value="animal-welfare">
+                      {t("पशु कल्याण", "Animal Welfare")}
+                    </option>
+
+                    <option value="bird-welfare">
+                      {t("पक्षी सेवा", "Bird Welfare")}
                     </option>
 
                     <option value="other">

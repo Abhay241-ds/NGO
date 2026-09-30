@@ -26,13 +26,18 @@ type Volunteer = {
 
 const interests = [
   "All Interests",
-  "Social Service",
-  "Education",
-  "Environment",
   "Health",
+  "Education",
+  "Tree Plantation",
+  "Food Distribution",
   "Sports",
+  "Women Empowerment",
+  "Child Protection",
+  "Animal Welfare",
+  "Bird Welfare",
   "Other",
 ];
+
 
 const statusFilters = [
   "All Status",
@@ -685,18 +690,36 @@ export default function VolunteersPage() {
    FORMAT INTEREST
 ============================================================ */
 
-function formatInterest(interest: string) {
-  const interests: Record<string, string> = {
-    social: "Social Service",
+const formatInterest = (value: string | null) => {
+  if (!value) return "Other";
+
+  const interestLabels: Record<string, string> = {
     education: "Education",
-    environment: "Environment",
     health: "Health",
+    "tree-plantation": "Tree Plantation",
     sports: "Sports",
+    "food-distribution": "Food Distribution",
+    "women-empowerment": "Women Empowerment",
+    "child-protection": "Child Protection",
+    "animal-welfare": "Animal Welfare",
+    "bird-welfare": "Bird Welfare",
     other: "Other",
+
+    // For older records that were saved with capitalized values
+    Education: "Education",
+    Health: "Health",
+    "Tree Plantation": "Tree Plantation",
+    Sports: "Sports",
+    "Food Distribution": "Food Distribution",
+    "Women Empowerment": "Women Empowerment",
+    "Child Protection": "Child Protection",
+    "Animal Welfare": "Animal Welfare",
+    "Bird Welfare": "Bird Welfare",
+    Other: "Other",
   };
 
-  return interests[interest.toLowerCase()] || interest;
-}
+  return interestLabels[value] || value;
+};
 
 /* ============================================================
    STAT CARD

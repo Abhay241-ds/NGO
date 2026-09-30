@@ -99,7 +99,7 @@ export default function AboutPage() {
               <p className="mt-4 max-w-2xl font-bold text-sm leading-6 text-white/85 sm:text-base">
                 {t(
                   "यह संस्था आदरणीय स्वर्गीय श्री ब्रह्मानंद महाराज जी की प्रेरणा एवं मार्गदर्शन से सामाजिक सेवा के क्षेत्र में निरंतर कार्य कर रही है। संस्था का उद्देश्य समाज के वंचित एवं निम्न वर्गों तक बुनियादी सुविधाएँ पहुँचाना, जरूरतमंद लोगों की सहायता करना तथा प्रकृति एवं पर्यावरण की सेवा और संरक्षण के लिए कार्य करना है।",
-                  
+
                   "Inspired by the vision and guidance of the revered Late Shri Brahmanand Maharaj Ji, this organization is dedicated to serving society and working for the welfare of underprivileged and marginalized communities. Its aim is to provide basic facilities to those in need, support the underprivileged, and contribute towards the service, protection, and preservation of nature and the environment."
                 )}
               </p>
@@ -116,10 +116,12 @@ export default function AboutPage() {
       {/* =========================================
           INTRODUCTION
       ========================================== */}
-      <section className="py-16">
-        <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 lg:grid-cols-2 lg:px-6">
+      <section className="py-10 sm:py-14">
+        <div className="mx-auto grid max-w-7xl items-stretch gap-12 px-4 lg:grid-cols-2 lg:px-6">
 
-          <div>
+          {/* Left - About / Identity */}
+          <div className="flex flex-col justify-center">
+
             <p className="mb-3 text-sm font-bold uppercase tracking-wider text-[#17653a]">
               {t("हमारी पहचान", "Who We Are")}
             </p>
@@ -142,7 +144,7 @@ export default function AboutPage() {
 
             <p className="mt-4 leading-8 text-gray-700">
               {t(
-                "हप्रकृति की सेवा — पर्यावरण एवं प्रकृति के संरक्षण और संवर्धन के लिए कार्य करना।",
+                "प्रकृति की सेवा — पर्यावरण एवं प्रकृति के संरक्षण और संवर्धन के लिए कार्य करना।",
                 "Service to Nature — To work towards the protection, preservation, and betterment of nature and the environment."
               )}
             </p>
@@ -153,30 +155,29 @@ export default function AboutPage() {
                 "Serving the Needy — To support and serve helpless, underprivileged, and needy people."
               )}
             </p>
+
           </div>
 
-          <div className="relative">
-            <div className="relative h-87.5 overflow-hidden rounded-2xl">
+
+          {/* Right - Registration Certificate */}
+          <div className="relative flex items-center justify-center">
+
+            <div className="relative w-full overflow-hidden rounded-2xl border border-gray-200 bg-white p-3 shadow-lg">
+
               <Image
-                src="/images/About2.png"
-                alt="Community service"
-                fill
-                className="object-cover"
+                src="/images/Registration-Certificate.png"
+                alt="Society Registration Certificate"
+                width={1200}
+                height={1700}
+                priority
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="h-auto max-h-[650px] w-full rounded-xl object-contain"
               />
+
             </div>
 
-            <div className="absolute -bottom-7 left-5 right-5 rounded-xl bg-[#173b24] p-6 text-white shadow-xl sm:left-10 sm:right-10">
-              <p className="text-sm font-bold text-[#f5c842]">
-                {t("हमारा विश्वास", "Our Belief")}
-              </p>
+           
 
-              <h3 className="mt-2 text-xl font-extrabold">
-                {t(
-                  "हर व्यक्ति सम्मान और सहायता का हकदार है।",
-                  "Every person deserves dignity and support."
-                )}
-              </h3>
-            </div>
           </div>
 
         </div>
@@ -185,12 +186,12 @@ export default function AboutPage() {
       {/* =========================================
           MISSION & VISION
       ========================================== */}
-      
+
 
       {/* =========================================
           OUR VALUES
       ========================================== */}
-     
+
 
       {/* =========================================
           OBJECTIVES
@@ -233,6 +234,56 @@ export default function AboutPage() {
         </div>
       </section>
 
+
+      {/* Documents / Information Available */}
+      <div className=" border border-gray-200 bg-[#fbfcfa] p-5 sm:p-6">
+        <div className="mb-5">
+          <h3 className="text-xl font-extrabold text-[#173b24]">
+            {t(
+              "संस्था से संबंधित जानकारी",
+              "Organization Information"
+            )}
+          </h3>
+
+          <p className="mt-1 text-sm text-gray-500">
+            {t(
+              "संस्था से संबंधित प्रमुख दस्तावेज़ एवं जानकारी",
+              "Key documents and information related to the organization"
+            )}
+          </p>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          {[
+            ["Society Registration Certificate", "सोसायटी पंजीकरण प्रमाण पत्र"],
+            ["Organization PAN", "संस्था का PAN"],
+            ["12AB Certificate", "12AB प्रमाण पत्र"],
+            ["80G Certificate", "80G प्रमाण पत्र"],
+            ["NGO Darpan ID", "NGO Darpan ID"],
+            ["CSR-1 Number", "CSR-1 नंबर"],
+            ["Organization Objectives", "संस्था के उद्देश्य"],
+            ["Bank Account / IFSC", "बैंक खाता / IFSC"],
+            ["Social Work Reports", "सामाजिक कार्यों की रिपोर्ट"],
+            ["Annual Income & Expenditure Report", "वार्षिक आय-व्यय रिपोर्ट"],
+            ["CSR Project / Amount Details", "CSR प्रोजेक्ट / राशि का विवरण"],
+            ["Office Bearers Information", "पदाधिकारियों की जानकारी"],
+          ].map(([en, hi]) => (
+            <div
+              key={en}
+              className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white px-4 py-3"
+            >
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-green-100 text-sm">
+                ✅
+              </span>
+
+              <span className="text-sm font-semibold text-[#173b24]">
+                {t(hi, en)}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* =========================================
           STATS
       ========================================== */}
@@ -249,9 +300,8 @@ export default function AboutPage() {
             ].map(([value, hi, en], index) => (
               <div
                 key={en}
-                className={`p-7 text-center ${
-                  index !== 3 ? "border-b border-white/10 lg:border-b-0 lg:border-r" : ""
-                }`}
+                className={`p-7 text-center ${index !== 3 ? "border-b border-white/10 lg:border-b-0 lg:border-r" : ""
+                  }`}
               >
                 <div className="text-3xl font-extrabold text-[#f5c842]">
                   {value}
@@ -270,7 +320,7 @@ export default function AboutPage() {
       {/* =========================================
           CTA
       ========================================== */}
-     
+
     </main>
   );
 }
