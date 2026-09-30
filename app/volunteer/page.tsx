@@ -2,9 +2,8 @@
 
 import { FormEvent, useState } from "react";
 import { useLanguage } from "@/components/LanguageProvider";
-import { createClient } from "@/lib/supabase/server";
+import { supabase } from "@/lib/supabase/client";
 
-const supabase = createClient();
 
 export default function VolunteerPage() {
   const { t } = useLanguage();
