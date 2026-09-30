@@ -7,7 +7,9 @@ import { jsPDF } from "jspdf";
 
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
-import { supabase } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/client";
+
+const supabase = createClient();
 
 type Volunteer = {
   photo_path: string | null;

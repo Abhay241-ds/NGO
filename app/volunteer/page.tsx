@@ -2,7 +2,9 @@
 
 import { FormEvent, useState } from "react";
 import { useLanguage } from "@/components/LanguageProvider";
-import { supabase } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/server";
+
+const supabase = createClient();
 
 export default function VolunteerPage() {
   const { t } = useLanguage();
@@ -81,7 +83,7 @@ export default function VolunteerPage() {
 
         const fileName = `${crypto.randomUUID()}.${fileExt}`;
 
-        const { error: uploadError } = await supabase.storage
+        const { error: uploadError } = await (await supabase).storage
           .from("volunteer-photos")
           .upload(fileName, photo, {
             contentType: photo.type,
@@ -99,7 +101,7 @@ export default function VolunteerPage() {
       // INSERT VOLUNTEER
       // -----------------------------
 
-      const { data, error: insertError } = await supabase
+      const { data, error: insertError } = await (await supabase)
         .from("volunteers")
         .insert({
           name,
@@ -128,7 +130,7 @@ export default function VolunteerPage() {
 
         // Delete uploaded photo if database insert failed
         if (photoPath) {
-          const { error: cleanupError } = await supabase.storage
+          const { error: cleanupError } = await (await supabase).storage
             .from("volunteer-photos")
             .remove([photoPath]);
 
