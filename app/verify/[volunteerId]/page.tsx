@@ -17,11 +17,12 @@ export default async function VerifyVolunteer({ params }: Props) {
         .eq("volunteer_id", volunteerId)
         .maybeSingle();
 
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+    console.log("SUPABASE URL:", supabaseUrl);
     console.log("VERIFY ID:", volunteerId);
-    console.log("VERIFY FOUND:", volunteer !== null);
-    console.log("VERIFY NAME:", volunteer?.name);
-    console.log("VERIFY STATUS:", volunteer?.status);
-    console.log("VERIFY ERROR:", error?.message);
+    console.log("VOLUNTEER:", volunteer);
+    console.log("ERROR:", error);
 
     // Volunteer not found
     if (!volunteer) {
