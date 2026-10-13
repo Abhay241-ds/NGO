@@ -7,7 +7,7 @@ import Inspiration from "@/components/Inspiration";
 import FounderCard from "@/components/FounderCard";
 
 export default function AboutPage() {
-  const { t } = useLanguage();
+  const { t } = useLanguage("hi");
 
   const objectives = [
     {

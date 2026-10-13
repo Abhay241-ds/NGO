@@ -6,7 +6,8 @@ import { useLanguage } from "./LanguageProvider";
 import CopyButton from "./CopyButton";
 
 export default function Footer() {
-  const { t } = useLanguage();
+  const { language, setLanguage, t } = useLanguage("hi");
+
 
   return (
     <footer className="bg-[#0b2817] text-white">
@@ -51,9 +52,10 @@ export default function Footer() {
           <p className="mt-4 text-sm leading-6 text-white/70">
             {t("आपका सहयोग हमारी सेवा गतिविधियों को आगे बढ़ाने में मदद करता है।", "Your support helps us continue our service activities.")}
           </p>
-          <Link href="/contact#support" className="mt-4 inline-flex rounded-md bg-[#f5c842] px-5 py-2.5 font-bold text-[#173b24]">
-            {t("Donate करें", "Donate")}
+          <Link href="/donations" className="mt-4 inline-flex rounded-md bg-[#f5c842] px-5 py-2.5 font-bold text-[#173b24]">
+            {t("दान करें", "Donate")} 
           </Link>
+          
         </div>
       </div>
 

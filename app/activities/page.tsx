@@ -7,8 +7,6 @@ import { useLanguage } from "@/components/LanguageProvider";
 import ActivityCard from "@/components/ActivityCard";
 import { supabase } from "@/lib/supabase/client";
 
-
-
 type ActivityImage = {
   url: string;
   publicId: string;
@@ -28,7 +26,7 @@ type Activity = {
 
 export default function ActivitiesPage() {
 
-  const { t } = useLanguage();
+  const { t } = useLanguage("hi");
 
   const [activeCategory, setActiveCategory] = useState("all");
   const [activities, setActivities] = useState<Activity[]>([]);

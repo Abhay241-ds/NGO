@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useLanguage } from "./LanguageProvider";
 
 export default function InspirationSection() {
-  const { t } = useLanguage();
+  const { t } = useLanguage("hi");
   const [expanded, setExpanded] = useState(false);
 
   return (

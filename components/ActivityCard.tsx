@@ -19,7 +19,7 @@ export default function ActivityCard({
   hiDescription,
   enDescription,
 }: ActivityCardProps) {
-  const { t } = useLanguage();
+  const { t } = useLanguage("hi");
   const [activeImage, setActiveImage] = useState(0);
 
   // Remove empty image paths

@@ -604,17 +604,7 @@ export default function AdminPage() {
 
 
                 </Link>
-                <Link
-                  href="/admin/donations"
-                  className="rounded-xl border text-center border-gray-200 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-                >
-                  <i className="fa-solid fa-indian-rupee-sign text-xl text-[#17653a]" />
-
-                  <h3 className=" font-bold text-gray-800">
-                    Donations
-                  </h3>
-
-                </Link>
+                
 
               </div>
 

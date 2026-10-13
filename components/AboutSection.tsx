@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useLanguage } from "./LanguageProvider";
 
 export default function AboutSection() {
-  const { t } = useLanguage();
+  const { t } = useLanguage("hi");
 
   return (
     <section className="bg-white py-14">

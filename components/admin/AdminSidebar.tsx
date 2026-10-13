@@ -22,11 +22,6 @@ const menuItems = [
     href: "/admin/activities",
     icon: "fa-solid fa-hand-holding-heart",
   },
-  {
-    name: "Donations",
-    href: "/admin/donations",
-    icon: "fa-solid fa-indian-rupee-sign",
-  },
 ];
 
 export default function AdminSidebar() {

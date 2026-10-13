@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useLanguage } from "./LanguageProvider";
 
 export default function Hero() {
-  const { t } = useLanguage();
+  const { t } = useLanguage("hi");
 
   const features = [
     { icon: "🤝", hi: "हमारा उद्देश्य", en: "Our Purpose", subHi: "समाज सेवा, शिक्षा, स्वास्थ्य और मानव कल्याण", subEn: "Social service, education, health & welfare" },

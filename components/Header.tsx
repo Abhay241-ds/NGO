@@ -10,7 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 const supabase = createClient();
 
 export default function Header() {
-  const { language, setLanguage, t } = useLanguage();
+  const { language, setLanguage, t } = useLanguage("hi");
   const pathname = usePathname();
 
   const [mobileMenu, setMobileMenu] = useState(false);
@@ -52,6 +52,7 @@ export default function Header() {
       en: "Become a Volunteer",
       href: "/volunteer",
     },
+
   ];
 
   // Check active page
@@ -128,25 +129,32 @@ export default function Header() {
                   key={item.href}
                   href={item.href}
                   aria-current={active ? "page" : undefined}
-                  className={`relative flex h-full items-center px-3.5 text-sm font-semibold transition xl:px-4 ${
-                    active
-                      ? "text-[#17653a]"
-                      : "text-gray-700 hover:text-[#17653a]"
-                  }`}
+                  className={`relative flex h-full items-center px-3.5 text-sm font-semibold transition xl:px-4 ${active
+                    ? "text-[#17653a]"
+                    : "text-gray-700 hover:text-[#17653a]"
+                    }`}
                 >
                   {t(item.hi, item.en)}
 
                   {/* Active Page Indicator */}
                   <span
-                    className={`absolute bottom-0 left-3.5 right-3.5 h-0.75 rounded-t-full bg-[#17653a] transition-opacity xl:left-4 xl:right-4 ${
-                      active ? "opacity-100" : "opacity-0"
-                    }`}
+                    className={`absolute bottom-0 left-3.5 right-3.5 h-0.75 rounded-t-full bg-[#17653a] transition-opacity xl:left-4 xl:right-4 ${active ? "opacity-100" : "opacity-0"
+                      }`}
                   />
                 </Link>
               );
             })}
 
             {/* Language Button */}
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href = "/donate";
+              }}
+              className="ml-4 hidden cursor-pointer rounded-lg border border-[#f5c842] bg-[#f5c842] px-4 py-2 text-sm font-bold text-[#173b24] duration-300 hover:bg-[#F5C842] hover:text-[#17653a] lg:block"
+            >
+              {language === "hi" ? "दान करें" : "Donate"}
+            </button>
             <button
               type="button"
               onClick={() =>
@@ -205,11 +213,10 @@ export default function Header() {
                       href={item.href}
                       onClick={closeMobileMenu}
                       aria-current={active ? "page" : undefined}
-                      className={`rounded-lg px-4 py-3 text-sm font-semibold transition ${
-                        active
-                          ? "bg-[#eef5eb] text-[#17653a]"
-                          : "text-gray-700 hover:bg-gray-50 hover:text-[#17653a]"
-                      }`}
+                      className={`rounded-lg px-4 py-3 text-sm font-semibold transition ${active
+                        ? "bg-[#eef5eb] text-[#17653a]"
+                        : "text-gray-700 hover:bg-gray-50 hover:text-[#17653a]"
+                        }`}
                     >
                       {t(item.hi, item.en)}
                     </Link>
@@ -217,6 +224,16 @@ export default function Header() {
                 })}
 
                 {/* Mobile Language Button */}
+                <Link
+                  href="/donate"
+                  onClick={closeMobileMenu}
+                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-[#f5c842] bg-[#f5c842] px-4 py-3 text-sm font-bold text-[#173b24] transition duration-300 hover:bg-[#F5C842] hover:text-[#17653a]"
+                >
+                  <i className="fa-solid fa-hand-holding-heart"></i>
+                  {language === "hi" ? "दान करें" : "Donate "}
+                  <i className="fa-solid fa-hand-holding-heart"></i>
+                </Link>
+
                 <button
                   type="button"
                   onClick={() =>

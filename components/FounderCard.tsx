@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useLanguage } from "./LanguageProvider";
 
 export default function FounderCard() {
-  const { t } = useLanguage();
+  const { t } = useLanguage("hi");
   const [expanded, setExpanded] = useState(false);
 
   return (

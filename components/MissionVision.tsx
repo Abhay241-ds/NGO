@@ -3,7 +3,7 @@
 import { useLanguage } from "./LanguageProvider";
 
 export default function MissionVision() {
-  const { t } = useLanguage();
+  const { t } = useLanguage("hi");
 
   return (
     <section className="mx-auto grid max-w-7xl gap-5 px-4 py-12 md:grid-cols-2 lg:px-6">

@@ -3,7 +3,7 @@
 import { useLanguage } from "./LanguageProvider";
 
 export default function Objectives() {
-  const { t } = useLanguage();
+  const { t } = useLanguage("hi");
 
   const objectives = [
     ["🎓", "शिक्षा", "Education", "जरूरतमंद बच्चों को शिक्षा और अध्ययन सामग्री उपलब्ध कराना।", "Providing education and learning materials to children in need."],

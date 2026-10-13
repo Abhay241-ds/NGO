@@ -8,6 +8,7 @@ import { jsPDF } from "jspdf";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
 import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
 
 const supabase = createClient();
 
@@ -24,6 +25,15 @@ type Volunteer = {
   message: string | null;
   status: string;
   created_at: string;
+
+  // Blood Group
+  blood_group: string | null;
+
+  // Payment Details
+  payment_upi_id: string | null;
+  payment_transaction_id: string | null;
+  payment_amount: number | null;
+  payment_status: string | null;
 };
 
 const interests = [
@@ -89,9 +99,25 @@ export default function VolunteersPage() {
 
     const { data, error } = await supabase
       .from("volunteers")
-      .select(
-        "id, volunteer_id, name, photo_path, email, phone, city, interest, category, message, status, created_at"
-      )
+      .select(`
+    id,
+    volunteer_id,
+    name,
+    photo_path,
+    email,
+    phone,
+    city,
+    interest,
+    category,
+    message,
+    status,
+    created_at,
+    blood_group,
+    payment_upi_id,
+    payment_transaction_id,
+    payment_amount,
+    payment_status
+  `)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -654,6 +680,48 @@ export default function VolunteersPage() {
                 </div>
               )}
             </div>
+
+            <div className="mt-7">
+
+              <h2 className="mb-4 text-lg font-bold text-[#173b24]">
+                Quick Actions
+              </h2>
+
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+
+
+
+
+                <Link
+                  href="/admin/volunteers"
+                  className="rounded-xl border text-center border-gray-200 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  <i className="fa-solid fa-chart-line text-[#17653a]" />
+
+                  <h3 className=" font-bold text-gray-800">
+                    Dashboard
+                  </h3>
+
+
+                </Link>
+
+                <Link
+                  href="/admin/activities"
+                  className="rounded-xl border text-center border-gray-200 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  <i className="fa-solid fa-hand-holding-heart text-xl text-[#17653a]" />
+
+                  <h3 className=" font-bold text-gray-800">
+                    Activities
+                  </h3>
+
+
+                </Link>
+
+
+              </div>
+
+            </div>
           </main>
         </div>
       </div>
@@ -929,6 +997,42 @@ function VolunteerDetailsModal({
               value={volunteer.volunteer_id || "Not assigned"}
               icon="fa-solid fa-id-card"
             />
+            {/* BLOOD GROUP */}
+            <DetailItem
+              label="Blood Group"
+              value={volunteer.blood_group || "Not provided"}
+              icon="fa-solid fa-droplet"
+            />
+
+            {/* VOLUNTEER UPI ID */}
+            <DetailItem
+              label="Volunteer UPI ID"
+              value={volunteer.payment_upi_id || "Not provided"}
+              icon="fa-solid fa-wallet"
+            />
+
+            {/* TRANSACTION ID */}
+            <DetailItem
+              label="Transaction ID"
+              value={
+                volunteer.payment_transaction_id || "Not provided"
+              }
+              icon="fa-solid fa-receipt"
+            />
+
+            {/* REGISTRATION FEE */}
+            <DetailItem
+              label="Registration Fee"
+              value={
+                volunteer.payment_amount != null
+                  ? `₹${volunteer.payment_amount}`
+                  : "Not provided"
+              }
+              icon="fa-solid fa-indian-rupee-sign"
+            />
+
+            {/* PAYMENT STATUS */}
+            
           </div>
 
           {/* MESSAGE */}
@@ -1869,6 +1973,16 @@ function VolunteerIdCardModal({
       rowGap * 4,
       1
     );
+    drawInfoRow(
+      ctx,
+      "Blood Group",
+      volunteer.blood_group ||
+      "N/A",
+      infoX,
+      firstRowY +
+      rowGap * 5,
+      1
+    );
 
     /* ==========================================================
        QR CODE
@@ -2420,6 +2534,13 @@ function VolunteerIdCardModal({
                       label="Phone"
                       value={
                         volunteer.phone
+                      }
+                    />
+                    <IdCardRow
+                      label="Blood Group"
+                      value={
+                        volunteer.blood_group ||
+                        "N/A" 
                       }
                     />
                   </div>
