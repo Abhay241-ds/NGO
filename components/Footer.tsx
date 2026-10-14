@@ -52,7 +52,7 @@ export default function Footer() {
           <p className="mt-4 text-sm leading-6 text-white/70">
             {t("आपका सहयोग हमारी सेवा गतिविधियों को आगे बढ़ाने में मदद करता है।", "Your support helps us continue our service activities.")}
           </p>
-          <Link href="/donations" className="mt-4 inline-flex rounded-md bg-[#f5c842] px-5 py-2.5 font-bold text-[#173b24]">
+          <Link href="/donate" className="mt-4 inline-flex rounded-md bg-[#f5c842] px-5 py-2.5 font-bold text-[#173b24]">
             {t("दान करें", "Donate")} 
           </Link>
           

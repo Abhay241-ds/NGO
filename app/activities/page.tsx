@@ -445,7 +445,7 @@ export default function ActivitiesPage() {
           <div className="mt-7 flex flex-wrap justify-center gap-4">
 
             <Link
-              href="/contact"
+              href="/donate"
               className="rounded-md bg-[#f5c842] px-7 py-3 font-bold text-[#173b24] hover:bg-[#ffd85d]"
             >
               {t(

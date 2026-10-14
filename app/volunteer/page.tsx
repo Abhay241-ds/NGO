@@ -293,8 +293,7 @@ export default function VolunteerPage() {
             payment_amount: REGISTRATION_FEE,
             payment_status: "Pending Verification",
           })
-          .select()
-          .single();
+          
 
       // -----------------------------------------------
       // DATABASE ERROR
