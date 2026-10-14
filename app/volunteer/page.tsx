@@ -51,17 +51,9 @@ export default function VolunteerPage() {
 
     const photo = photoInput?.files?.[0];
 
-    if (!photo) {
-      setError(
-        t(
-          "कृपया अपनी फोटो अपलोड करें।",
-          "Please upload your photo."
-        )
-      );
-      return;
-    }
+   
 
-    if (photo.size > MAX_PHOTO_SIZE) {
+    if (photo && photo.size > MAX_PHOTO_SIZE) {
       setError(
         t(
           "फोटो का आकार 1 MB से अधिक नहीं होना चाहिए।",
@@ -162,9 +154,7 @@ export default function VolunteerPage() {
         !city ||
         !interest ||
         !category ||
-        !blood_group ||
-        !photo ||
-        photo.size === 0
+        !blood_group 
       ) {
         setStep(1);
 
@@ -178,7 +168,7 @@ export default function VolunteerPage() {
         return;
       }
 
-      if (photo.size > MAX_PHOTO_SIZE) {
+      if (photo && photo.size > MAX_PHOTO_SIZE) {
         setStep(1);
 
         setError(
@@ -237,37 +227,36 @@ export default function VolunteerPage() {
       // UPLOAD VOLUNTEER PHOTO
       // -----------------------------------------------
 
-      const fileExt =
-        photo.name.split(".").pop()?.toLowerCase() || "jpg";
+      let photoPath: string | null = null;
 
-      const fileName =
-        `${crypto.randomUUID()}.${fileExt}`;
+      if (photo && photo.size > 0) {
+        const fileExt =
+          photo.name.split(".").pop()?.toLowerCase() || "jpg";
 
-      const { error: uploadError } =
-        await supabaseClient.storage
+        const fileName = `${crypto.randomUUID()}.${fileExt}`;
+
+        const { error: uploadError } = await supabaseClient.storage
           .from("volunteer-photos")
           .upload(fileName, photo, {
             contentType: photo.type,
             upsert: false,
           });
 
-      if (uploadError) {
-        console.error(
-          "Volunteer photo upload error:",
-          uploadError
-        );
+        if (uploadError) {
+          console.error("Volunteer photo upload error:", uploadError);
 
-        setError(
-          t(
-            "फोटो अपलोड नहीं हो सकी। कृपया दोबारा प्रयास करें।",
-            "Photo upload failed. Please try again."
-          )
-        );
+          setError(
+            t(
+              "फोटो अपलोड नहीं हो सकी। कृपया दोबारा प्रयास करें।",
+              "Photo upload failed. Please try again."
+            )
+          );
 
-        return;
+          return;
+        }
+
+        photoPath = fileName;
       }
-
-      photoPath = fileName;
 
       // -----------------------------------------------
       // INSERT VOLUNTEER AND PAYMENT DETAILS
@@ -293,7 +282,7 @@ export default function VolunteerPage() {
             payment_amount: REGISTRATION_FEE,
             payment_status: "Pending Verification",
           })
-          
+
 
       // -----------------------------------------------
       // DATABASE ERROR
@@ -307,14 +296,15 @@ export default function VolunteerPage() {
           code: insertError.code,
         });
 
-        // Delete uploaded photo if insertion fails
-        const { error: cleanupError } =
-          await supabaseClient.storage
+        // Delete uploaded photo only if a photo was uploaded
+        if (photoPath) {
+          const { error: deleteError } = await supabaseClient.storage
             .from("volunteer-photos")
             .remove([photoPath]);
 
-        if (cleanupError) {
-          console.error("Photo cleanup error:", cleanupError);
+          if (deleteError) {
+            console.error("Failed to delete uploaded photo:", deleteError);
+          }
         }
 
         photoPath = null;
